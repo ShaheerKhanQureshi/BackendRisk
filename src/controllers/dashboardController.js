@@ -1,4 +1,4 @@
-const Report = require('../models/Report');
+
 const { body, validationResult } = require('express-validator');
 const logger = require('../utils/logger');
 const db = require('../config/db');
@@ -14,20 +14,8 @@ exports.viewResponses = async (req, res) => {
     }
 };
 
-// Download forms as PDF
-exports.downloadForm = async (req, res) => {
-    const { userId } = req.params;
-    try {
-        const responses = await Answer.find({ user: userId }).populate('question');
-        const pdfBuffer = await createPdfFromResponses(responses);
-        res.set('Content-Type', 'application/pdf');
-        res.set('Content-Disposition', `attachment; filename=form-${userId}.pdf`);
-        res.send(pdfBuffer);
-    } catch (err) {
-        logger.error('Error downloading form:', err);
-        res.status(500).json({ error: 'An error occurred while downloading the form' });
-    }
-};
+
+
 
 // Submit health assessment form
 exports.submitForm = async (req, res) => {
@@ -75,82 +63,6 @@ exports.submitForm = async (req, res) => {
     }
 };
 
-// Validation middleware for submitting the form
-exports.validateSubmitForm = [
-    body('answers').isArray().withMessage('Answers must be an array'),
-    body('answers.*.questionId').notEmpty().withMessage('Question ID is required'),
-    body('answers.*.response').notEmpty().withMessage('Response is required'),
-    (req, res, next) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-        next();
-    },
-];
-
-// Generate report functionality
-exports.generateReport = async (req, res) => {
-    const { userId } = req.params;
-
-    try {
-        const report = await Report.findOne({ user: userId }).populate('answers');
-        if (!report) return res.status(404).json({ error: 'Report not found' });
-
-        const pdfBuffer = await createPdfFromReport(report); // Generate PDF report
-        res.set('Content-Type', 'application/pdf');
-        res.set('Content-Disposition', `attachment; filename=report-${userId}.pdf`);
-        res.send(pdfBuffer);
-    } catch (err) {
-        logger.error('Error generating report:', err);
-        res.status(500).json({ error: 'An error occurred while generating the report' });
-    }
-};
-
-//dashboard grapghs and logs
-// exports.getTotalUsers = (req, res) => {
-//     connection.query("SELECT employee_info FROM assessment_response", (err, results) => {
-//       if (err) throw err;
-//       const totalUsers = results.length;
-//       res.json({ totalUsers });
-//     });
-//   };
-  
-//   exports.getTotalCompanies = (req, res) => {
-//     connection.query("SELECT COUNT(*) AS totalCompanies FROM companies", (err, results) => {
-//       if (err) throw err;
-//       res.json(results[0]);
-//     });
-//   };
-  
-//   exports.getSessionByCompany = (req, res) => {
-//     connection.query(`
-//       SELECT company_slug, COUNT(*) AS sessions, AVG(health_assessment) AS averageScore
-//       FROM assessment_response
-//       GROUP BY company_slug
-//     `, (err, results) => {
-//       if (err) throw err;
-//       res.json(results);
-//     });
-//   };
-  
-//   exports.getUserLogs = (req, res) => {
-//     connection.query("SELECT name, role, status, created_at FROM user", (err, results) => {
-//       if (err) throw err;
-//       res.json(results);
-//     });
-//   };
-  
-//   exports.getPerformanceMetrics = (req, res) => {
-//     connection.query(`
-//       SELECT company_slug, COUNT(*) AS count
-//       FROM assessment_response
-//       GROUP BY company_slug
-//     `, (err, results) => {
-//       if (err) throw err;
-//       res.json(results);
-//     });
-//   };
 exports.getTotalUsers = async (req, res) => {
     try {
         const [results] = await db.query("SELECT employee_info FROM assessment_response");
@@ -183,19 +95,7 @@ exports.getTotalCompanies = async (req, res) => {
     }
 };
 
-// exports.getSessionByCompany = async (req, res) => {
-//     try {
-//         const [results] = await db.query(`
-//             SELECT company_slug, COUNT(*) AS sessions, AVG(health_assessment) AS averageScore
-//             FROM assessment_response
-//             GROUP BY company_slug
-//         `);
-//         res.json(results);
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ message: "Database query failed" });
-//     }
-// };
+
 exports.getSessionByCompany = async (req, res) => {
     try {
         const [results] = await db.query(`
